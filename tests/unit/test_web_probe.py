@@ -1,6 +1,6 @@
 import pytest
 
-from webprobe import WebProbe
+from webprobe import WebProbeProxy
 
 
 @pytest.fixture
@@ -15,29 +15,47 @@ def dummy_targets():
             "hackthissite.org", "www.mibs-challenges.de", "demo.testfire.net"]
 
 
-class TestWebProbe:
+class TestWebProbeProxy:
     def test_probe_instantiates_correctly(self, dummy_targets):
         """
         GIVEN a set of target domains and ports
         WHEN this set is passed as arguments to the initializer of the
-            WebProbe class
-        THEN an instance of WebProbe must be created without errors
+            WebProbeProxy class
+        THEN an instance of WebProbeProxy must be created without errors
         """
 
-        probe = WebProbe(targets=dummy_targets)
+        probe = WebProbeProxy(targets=dummy_targets)
         assert isinstance(probe.targets, list)
         assert probe.ports == [80, 443]
-        assert probe.timeout == 10
+        assert probe.timeout == 5
+        assert probe.prefer_https is False
+        assert probe.port_mapping == {80: "http", 443: "https"}
+
+        '''Creating an instance of WebProbeProxy without specifying a 
+        target address must raise an exception'''
+        with pytest.raises(SystemExit) as e:
+            WebProbeProxy(targets=None)
+        assert "Cannot proceed without specifying at least one target IP " \
+               "address or domain name" in e.value.args[0]
+
+        '''Creating an instance of WebProbeProxy by specifying a file 
+        to which the current user has no read access must raise an 
+        exception'''
+        no_read_file_path = "/etc/shadow"
+        with pytest.raises(SystemExit) as e:
+            WebProbeProxy(targets=no_read_file_path)
+        assert f"Permission denied when reading the file " \
+               f"{no_read_file_path}" in e.value.args[0]
 
     def test_probe_iterable_targets(self, dummy_targets):
         """
-        GIVEN an instance of WebProbe
+        GIVEN an instance of WebProbeProxy
         WHEN this instance is set to execute on a given iterable of
             targets
         THEN the results must be returned without errors
         """
 
-        probe = WebProbe(targets=dummy_targets)
+        probe = WebProbeProxy(targets=dummy_targets)
         for result in probe.execute():
             assert result in ['http://google.com',
                               'https://google.com',
@@ -51,12 +69,12 @@ class TestWebProbe:
 
     def test_probe_integer_port(self, dummy_targets):
         """
-        GIVEN an instance of WebProbe
+        GIVEN an instance of WebProbeProxy
         WHEN this instance is set to execute on a specific port number
         THEN the results must be returned without errors
         """
 
-        probe = WebProbe(targets=dummy_targets, ports=443)
+        probe = WebProbeProxy(targets=dummy_targets, ports=443)
         for result in probe.execute():
             assert result in ['https://google.com',
                               'https://www.mibs-challenges.de',
@@ -65,23 +83,24 @@ class TestWebProbe:
 
     def test_probe_single_target(self, dummy_targets):
         """
-        GIVEN an instance of WebProbe
+        GIVEN an instance of WebProbeProxy
         WHEN this instance is set to execute on a specific domain and
             port number
         THEN the results must be returned without errors
         """
 
-        probe = WebProbe(targets=dummy_targets[1], ports=443)
+        probe = WebProbeProxy(targets=dummy_targets[1], ports=443)
         assert "https://google.com" in probe.execute()
 
     def test_probe_prefer_https(self, dummy_targets):
         """
-        GIVEN an instance of WebProbe
+        GIVEN an instance of WebProbeProxy
         WHEN this instance is set to execute on a given iterable of
             targets and prefer HTTPS responses
         THEN the results must be returned without errors
         """
-        probe = WebProbe(targets=dummy_targets, prefer_https=True)
+
+        probe = WebProbeProxy(targets=dummy_targets, prefer_https=True)
         for result in probe.execute():
             assert result in ['https://google.com',
                               'https://www.mibs-challenges.de',
@@ -91,12 +110,12 @@ class TestWebProbe:
 
     def test_probe_from_file(self, sample_domains):
         """
-        GIVEN an instance of WebProbe
+        GIVEN an instance of WebProbeProxy
         WHEN this instance is set to execute on a given set of targets
             correctly defined as line-separated strings on a text file
         THEN the results must be returned without errors
         """
 
-        probe = WebProbe(targets=sample_domains, prefer_https=True)
+        probe = WebProbeProxy(targets=sample_domains, prefer_https=True)
         for result in probe.execute():
             assert "uber.com" in result
