@@ -7,7 +7,7 @@ import abc
 import asyncio
 import contextlib
 from pathlib import Path
-from typing import Collection, Iterator, Union
+from typing import Collection, Iterator, Mapping, Union
 
 
 class WebProbe(object):
@@ -16,9 +16,9 @@ class WebProbe(object):
                  ports: list[int],
                  timeout: Union[int, float],
                  prefer_https: bool,
-                 port_mapping: dict):
+                 port_mapping: Mapping):
         """Perform asynchronous TCP-connect scans on combinations of
-        target hosts and port numbers.
+        target IP addresses and/or domain names and port numbers.
 
         Args:
             targets (list[str]): A list of strings defining a sequence
@@ -35,9 +35,9 @@ class WebProbe(object):
             prefer_https (bool): Omit performing requests with the HTTP
                 URI scheme for those servers that also respond with
                 HTTPS.
-            port_mapping (dict): Allows ports other than 80 and 443 to
-                be assigned to HTTP and HTTPS, respectively. Takes
-                input with the syntax {8080:'http'} or
+            port_mapping (Mapping): Allows ports other than 80 and 443
+                to be assigned to HTTP and HTTPS, respectively. Ex:
+                Dictionaries with the syntax {8080:'http'} or
                 {8080:'http',9900:'https'}
         """
 
@@ -77,6 +77,12 @@ class WebProbe(object):
                 domain, port, loop=self.__loop), timeout=self.timeout)
             self.results.append(f"{self.port_mapping[port]}://{domain}")
 
+    def _get_port_from_proto(self, protocol: str) -> int:
+        """Get a port number from a protocol name."""
+        for port, proto in self.port_mapping.items():
+            if proto.lower() == protocol.lower():
+                return port
+
     def execute(self) -> list:
         """
         Execute the asynchronous scan on each combination of target
@@ -88,16 +94,18 @@ class WebProbe(object):
         """
 
         if self.prefer_https is True:
-            '''When 'prefer_https' is True, requests to port 80 are 
-            initially skipped. If responses with the HTTPS URI scheme 
-            are received for a given domain, then this domain is 
-            excluded from the targets list. Finally, on a second call 
-            to the scan tasks, the remaining targets on the list are 
-            probed on port 80.'''
-            self.ports = 443,
+            '''When 'prefer_https' is True, requests to the HTTP port 
+            (default 80, unless rebound) are initially skipped. If 
+            responses with the HTTPS URI scheme are received for a 
+            given domain, then this domain is excluded from the targets 
+            list. Finally, on a second call to the scan tasks, the 
+            targets remaining on the list are probed just on the HTTP 
+            port.'''
+            http_port: int = self._get_port_from_proto("http")
+            self.ports.remove(http_port)
             self.__loop.run_until_complete(asyncio.wait(self._set_scan_tasks()))
             [self.targets.remove(url.split("//")[1]) for url in self.results]
-            self.ports = 80,
+            self.ports = http_port
         self.__loop.run_until_complete(asyncio.wait(self._set_scan_tasks()))
         self.__loop.run_until_complete(self._notify_all())
         return self.results
