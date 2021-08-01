@@ -105,7 +105,7 @@ class WebProbe(object):
             self.ports.remove(http_port)
             self.__loop.run_until_complete(asyncio.wait(self._set_scan_tasks()))
             [self.targets.remove(url.split("//")[1]) for url in self.results]
-            self.ports = http_port
+            self.ports = http_port,
         self.__loop.run_until_complete(asyncio.wait(self._set_scan_tasks()))
         self.__loop.run_until_complete(self._notify_all())
         return self.results
@@ -136,38 +136,33 @@ class WebProbeProxy(WebProbe):
                 port numbers as integers. Defaults to 80 and 443.
         """
         
-        self.targets = targets
-        self.ports = ports
-        super().__init__(targets=self.targets,
-                         ports=self.ports,
+        self._set_targets(targets)
+        self._set_proto_from_port(port_mapping)
+        self._set_ports(ports)
+        super().__init__(targets=self.__targets,
+                         ports=self.__ports,
                          timeout=timeout,
                          prefer_https=prefer_https,
-                         port_mapping=self._set_proto_from_port(port_mapping))
+                         port_mapping=self.__port_mapping)
 
-    @staticmethod
-    def _set_proto_from_port(bind: Union[str, Mapping, None]) -> Union[dict, Mapping]:
+    def _set_proto_from_port(self, bind: Union[str, Mapping, None]) -> None:
         """Parse a string that maps port numbers to protocol names and
         transforms it into a dictionary.
         Ex: From '8080:http,9900:https' to {8080:'http',9900:'https'}
         """
 
         if issubclass(bind.__class__, Mapping):
-            return bind
+            self.__port_mapping = bind
         elif bind is None:
-            return {80: "http", 443: "https"}
+            self.__port_mapping = {80: "http", 443: "https"}
         else:
             port_mapping = dict()
             for binding in bind.split(","):
                 for port, protocol in binding.split(":"):
                     port_mapping[int(port)] = protocol.strip()
-            return port_mapping
+            self.__port_mapping = port_mapping
 
-    @property
-    def targets(self):
-        return self._targets
-
-    @targets.setter
-    def targets(self, value: Union[str, Path, Collection[str]]):
+    def _set_targets(self, value: Union[str, Path, Collection[str]]):
         def __parse_file(filename: str) -> Iterator[str]:
             """Yield an iterator of strings extracted from the lines of
             a text file"""
@@ -178,32 +173,27 @@ class WebProbeProxy(WebProbe):
                 raise SystemExit(f"Permission denied when reading the file "
                                  f"{filename}")
 
-        if value is None:
+        if isinstance(value, str) or issubclass(value.__class__, Path):
+            if Path(value).is_file():
+                self.__targets = list(__parse_file(filename=value))
+            else:
+                self.__targets = [address.strip() for address in
+                                  value.split(",")]
+        elif issubclass(value.__class__, Collection):
+            self.__targets = list(value)
+        else:
             raise SystemExit("Cannot proceed without specifying at least one "
                              "target IP address or domain name")
-        elif isinstance(value, str) or issubclass(value.__class__, Path):
-            if Path(value).is_file():
-                self._targets = list(__parse_file(filename=value))
-            else:
-                self._targets = [address.strip() for address in
-                                 value.split(",")]
-        elif issubclass(value.__class__, Collection):
-            self._targets = list(value)
 
-    @property
-    def ports(self):
-        return self._ports
-
-    @ports.setter
-    def ports(self, value: Union[int, str, Collection[int]]):
+    def _set_ports(self, value: Union[int, str, Collection[int]]):
         if value is None:
-            self._ports = [80, 443]
+            self.__ports = list(self.__port_mapping.keys())
         elif isinstance(value, int):
-            self._ports = [value]
+            self.__ports = [value]
         elif isinstance(value, str):
-            self._ports = [int(port) for port in value.split(",")]
+            self.__ports = [int(port) for port in value.split(",")]
         elif issubclass(value.__class__, Collection):
-            self._ports = list(value)
+            self.__ports = list(value)
         else:
             raise SystemExit(f"Invalid input type for port numbers: {value}")
 
