@@ -112,41 +112,54 @@ class WebProbe(object):
 
 
 class WebProbeProxy(WebProbe):
-    """
-    Proxy class for WebProbe.
-
-    Allows greater flexibility when using WebProbe by parsing and
-    converting inputs of different types before instantiating WebProbe
-    and executing a scan.
-    """
-
     def __init__(self, *,
                  targets: Union[str, Path, Collection[str]],
                  ports: Union[int, str, Collection[int]] = None,
                  timeout: int = 5,
                  prefer_https: bool = False,
-                 port_mapping: str = None):
+                 port_mapping: Union[str, Mapping] = None):
+        """Proxy class for WebProbe.
+
+        Allows greater flexibility when using WebProbe by parsing and
+        converting inputs of different types before instantiating
+        WebProbe and executing a scan.
+
+        Args:
+            targets: A string defining a single or comma-separated
+                sequence targets, the absolute path to a file
+                containing line-separated targets or a collection of
+                targets as strings. Targets can be either IP addresses
+                or domain names.
+            ports: A single integer value with a valid port number as
+                regulated by IETF RFC 6335, a string defining a single
+                or comma-separated sequence of ports or a collection of
+                port numbers as integers. Defaults to 80 and 443.
+        """
+        
         self.targets = targets
         self.ports = ports
-        self.timeout = timeout
-        self.prefer_https = prefer_https
-        self.port_mapping = self._set_port_mapping(port_mapping)
         super().__init__(targets=self.targets,
                          ports=self.ports,
-                         timeout=self.timeout,
-                         prefer_https=self.prefer_https,
-                         port_mapping=self.port_mapping)
+                         timeout=timeout,
+                         prefer_https=prefer_https,
+                         port_mapping=self._set_proto_from_port(port_mapping))
 
     @staticmethod
-    def _set_port_mapping(setup: str):
-        if setup is None:
+    def _set_proto_from_port(bind: Union[str, Mapping, None]) -> Union[dict, Mapping]:
+        """Parse a string that maps port numbers to protocol names and
+        transforms it into a dictionary.
+        Ex: From '8080:http,9900:https' to {8080:'http',9900:'https'}
+        """
+
+        if issubclass(bind.__class__, Mapping):
+            return bind
+        elif bind is None:
             return {80: "http", 443: "https"}
         else:
             port_mapping = dict()
-            for setting in setup.split(","):
-                for mapping in setting:
-                    port, scheme = mapping.split(":")
-                    port_mapping[int(port)] = scheme.strip()
+            for binding in bind.split(","):
+                for port, protocol in binding.split(":"):
+                    port_mapping[int(port)] = protocol.strip()
             return port_mapping
 
     @property
@@ -155,7 +168,7 @@ class WebProbeProxy(WebProbe):
 
     @targets.setter
     def targets(self, value: Union[str, Path, Collection[str]]):
-        def _parse_file(filename: str) -> Iterator[str]:
+        def __parse_file(filename: str) -> Iterator[str]:
             """Yield an iterator of strings extracted from the lines of
             a text file"""
             try:
@@ -168,9 +181,9 @@ class WebProbeProxy(WebProbe):
         if value is None:
             raise SystemExit("Cannot proceed without specifying at least one "
                              "target IP address or domain name")
-        elif isinstance(value, str):
+        elif isinstance(value, str) or issubclass(value.__class__, Path):
             if Path(value).is_file():
-                self._targets = list(_parse_file(filename=value))
+                self._targets = list(__parse_file(filename=value))
             else:
                 self._targets = [address.strip() for address in
                                  value.split(",")]
