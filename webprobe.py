@@ -111,7 +111,7 @@ class WebProbe(object):
         return self.results
 
 
-class WebProbeProxy(WebProbe):
+class WebProbeProxy(object):
     def __init__(self, *,
                  targets: Union[str, Path, Collection[str]],
                  ports: Union[int, str, Collection[int]] = None,
@@ -135,34 +135,59 @@ class WebProbeProxy(WebProbe):
                 or comma-separated sequence of ports or a collection of
                 port numbers as integers. Defaults to 80 and 443.
         """
-        
-        self._set_targets(targets)
-        self._set_proto_from_port(port_mapping)
-        self._set_ports(ports)
-        super().__init__(targets=self.__targets,
-                         ports=self.__ports,
-                         timeout=timeout,
-                         prefer_https=prefer_https,
-                         port_mapping=self.__port_mapping)
 
-    def _set_proto_from_port(self, bind: Union[str, Mapping, None]) -> None:
-        """Parse a string that maps port numbers to protocol names and
-        transforms it into a dictionary.
+        self.targets = targets
+        self.port_mapping = port_mapping
+        self.ports = ports
+        self.timeout = timeout
+        self.prefer_https = prefer_https
+        self.webprobe = WebProbe(targets=self.targets,
+                                 ports=self.ports,
+                                 timeout=self.timeout,
+                                 prefer_https=self.prefer_https,
+                                 port_mapping=self.port_mapping)
+
+    def __setattr__(self, key, value):
+        with contextlib.suppress(AttributeError):
+            '''Allow the attributes of WebProbe to be silently updated 
+            whenever those of WebProbeProxy are modified'''
+            setattr(self.webprobe, key, value)
+        super().__setattr__(key, value)
+
+    def execute(self):
+        return self.webprobe.execute()
+
+    def register(self, observer):
+        return self.webprobe.register(observer=observer)
+
+    @property
+    def port_mapping(self):
+        """Gets port mapping.
+        Sets a port mapping by parsing a string that maps port numbers
+        to protocol names and transforms it into a dictionary.
         Ex: From '8080:http,9900:https' to {8080:'http',9900:'https'}
         """
+        return self._port_mapping
 
-        if issubclass(bind.__class__, Mapping):
-            self.__port_mapping = bind
-        elif bind is None:
-            self.__port_mapping = {80: "http", 443: "https"}
+    @port_mapping.setter
+    def port_mapping(self, value: Union[str, Mapping, None]):
+        if issubclass(value.__class__, Mapping):
+            self._port_mapping = value
+        elif value is None:
+            self._port_mapping = {80: "http", 443: "https"}
         else:
             port_mapping = dict()
-            for binding in bind.split(","):
+            for binding in value.split(","):
                 for port, protocol in binding.split(":"):
                     port_mapping[int(port)] = protocol.strip()
-            self.__port_mapping = port_mapping
+            self._port_mapping = port_mapping
 
-    def _set_targets(self, value: Union[str, Path, Collection[str]]):
+    @property
+    def targets(self):
+        return self._targets
+
+    @targets.setter
+    def targets(self, value: Union[str, Path, Collection[str]]):
         def __parse_file(filename: str) -> Iterator[str]:
             """Yield an iterator of strings extracted from the lines of
             a text file"""
@@ -175,25 +200,30 @@ class WebProbeProxy(WebProbe):
 
         if isinstance(value, str) or issubclass(value.__class__, Path):
             if Path(value).is_file():
-                self.__targets = list(__parse_file(filename=value))
+                self._targets = list(__parse_file(filename=value))
             else:
-                self.__targets = [address.strip() for address in
+                self._targets = [address.strip() for address in
                                   value.split(",")]
         elif issubclass(value.__class__, Collection):
-            self.__targets = list(value)
+            self._targets = list(value)
         else:
             raise SystemExit("Cannot proceed without specifying at least one "
                              "target IP address or domain name")
 
-    def _set_ports(self, value: Union[int, str, Collection[int]]):
+    @property
+    def ports(self):
+        return self._ports
+
+    @ports.setter
+    def ports(self, value: Union[int, str, Collection[int]]):
         if value is None:
-            self.__ports = list(self.__port_mapping.keys())
+            self._ports = list(self.port_mapping.keys())
         elif isinstance(value, int):
-            self.__ports = [value]
+            self._ports = [value]
         elif isinstance(value, str):
-            self.__ports = [int(port) for port in value.split(",")]
+            self._ports = [int(port) for port in value.split(",")]
         elif issubclass(value.__class__, Collection):
-            self.__ports = list(value)
+            self._ports = list(value)
         else:
             raise SystemExit(f"Invalid input type for port numbers: {value}")
 
@@ -265,6 +295,7 @@ if __name__ == "__main__":
                              "input with the syntax '8080:http' or "
                              "'8080:http,9900:https'. Defaults to None for "
                              "standard port")
+
     cli_args = parser.parse_args()
 
     scanner = WebProbeProxy(targets=cli_args.targets,
