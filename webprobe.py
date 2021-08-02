@@ -249,7 +249,7 @@ class ResultsToScreen(OutputMethod):
         self.scan = subject
 
     async def update(self):
-        print(*(result for result in self.scan.results), sep="\n")
+        print(*(result for result in self.scan.webprobe.results), sep="\n")
         await asyncio.sleep(0)
 
 
@@ -282,19 +282,21 @@ if __name__ == "__main__":
                         help="A comma-separated sequence of port numbers "
                              "and/or port ranges to scan on each target "
                              "specified, e.g., '20-25,53,80,443'.")
-    parser.add_argument("--timeout", type=int, default=5,
+    parser.add_argument("--timeout", type=int, default=5, metavar="TIME",
                         help="Time to wait for a response from a target before "
                              "closing a connection (defaults to 5 seconds).")
     parser.add_argument("--prefer-https", type=bool, default=False,
                         help="Omit performing requests with the HTTP URI "
                              "scheme for those servers that also respond with "
                              "HTTPS (defaults to False).")
-    parser.add_argument("--rebind", type=str, default=None,
+    parser.add_argument("--rebind", type=str, default=None, metavar="MAP",
                         help="Allows ports other than 80 and 443 to be "
                              "assigned to HTTP and HTTPS, respectively. Takes "
                              "input with the syntax '8080:http' or "
-                             "'8080:http,9900:https'. Defaults to None for "
-                             "standard port")
+                             "'8080:http,9900:https'. Defaults to standard "
+                             "port bindings 80:HTTP and 443:HTTPS.")
+    parser.add_argument("--silent", action="store_true",
+                        help="Suppress displaying results to STDOUT.")
 
     cli_args = parser.parse_args()
 
@@ -304,5 +306,7 @@ if __name__ == "__main__":
                             prefer_https=cli_args.prefer_https,
                             port_mapping=cli_args.rebind)
 
-    ResultsToScreen(subject=scanner)
+    if cli_args.silent is False:
+        ResultsToScreen(subject=scanner)
+
     scanner.execute()
