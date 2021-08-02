@@ -6,7 +6,7 @@ from webprobe import WebProbeProxy
 @pytest.fixture
 def sample_domains():
     return "/home/eonraider/Dropbox/offensive-python/tools/web-probe/tests/" \
-           "sample_files/amass-uber.com.txt"
+           "support_files/amass-uber.com.txt"
 
 
 @pytest.fixture
@@ -30,6 +30,23 @@ class TestWebProbeProxy:
         assert probe.timeout == 5
         assert probe.prefer_https is False
         assert probe.port_mapping == {80: "http", 443: "https"}
+
+        '''Updating the attributes of an instance of WebProbeProxy 
+        must also update those of the composed WebProbe instance 
+        without raising AttributeError'''
+        probe.ports = [8080, 9090]
+        assert probe.ports == probe.webprobe.ports
+        probe.timeout = 10
+        assert probe.timeout == probe.webprobe.timeout
+
+    # noinspection PyTypeChecker
+    def test_invalid_arguments(self):
+        """
+        GIVEN a set of invalid arguments for WebProbeProxy
+        WHEN this set is passed as arguments to the initializer of the
+            WebProbeProxy class
+        THEN an exception for each case must be raised
+        """
 
         '''Creating an instance of WebProbeProxy without specifying a 
         target address must raise an exception'''
@@ -107,6 +124,19 @@ class TestWebProbeProxy:
                               'http://scanme.nmap.org',
                               'https://demo.testfire.net',
                               'https://hackthissite.org']
+
+    @pytest.mark.skip()
+    def test_probe_rebound_port(self, http_server):
+        """
+        GIVEN an instance of WebProbeProxy
+        WHEN this instance is set to execute on target serving HTTP
+            from a non-standard port
+        THEN a new port mapping must be used to send and receive probes
+            to this server without errors
+        """
+        probe = WebProbeProxy(targets="127.0.0.1", port_mapping={8000: "http"})
+        results = probe.execute()
+        assert "http://127.0.0.1" in results
 
     def test_probe_from_file(self, sample_domains):
         """
