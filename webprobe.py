@@ -7,7 +7,7 @@ import abc
 import asyncio
 import contextlib
 from pathlib import Path
-from typing import Collection, Iterator, Mapping, Union
+from typing import Collection, Coroutine, Iterator, Mapping, Union
 
 
 class WebProbe(object):
@@ -50,18 +50,18 @@ class WebProbe(object):
         self.__loop = asyncio.get_event_loop()
         self.__observers = list()
 
-    def _set_scan_tasks(self):
+    def _set_scan_tasks(self) -> list[Coroutine]:
         """Set up a scan coroutine for each combination of target
         domain and port number."""
         return [self._scan_target_port(target, port) for port in self.ports
                 for target in self.targets]
 
-    def register(self, observer):
+    def register(self, observer) -> None:
         """Register a class that implements the interface of
         OutputMethod as an observer."""
         self.__observers.append(observer)
 
-    async def _notify_all(self):
+    async def _notify_all(self) -> None:
         """Notify all registered observers that the scan results are
         ready to be pulled and processed."""
         for observer in self.__observers:
@@ -83,7 +83,7 @@ class WebProbe(object):
             if proto.lower() == protocol.lower():
                 return port
 
-    def execute(self) -> list:
+    def execute(self) -> list[str]:
         """
         Execute the asynchronous scan on each combination of target
         domains and port numbers.
