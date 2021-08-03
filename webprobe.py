@@ -4,8 +4,10 @@
 __author__ = 'EONRaider @ keybase.io/eonraider'
 
 import abc
+import aiohttp
 import asyncio
 import contextlib
+from collections import defaultdict
 from pathlib import Path
 from typing import Collection, Coroutine, Iterator, Mapping, Union
 
@@ -16,6 +18,8 @@ class WebProbe(object):
                  ports: list[int],
                  timeout: Union[int, float],
                  prefer_https: bool,
+                 fetch_headers: bool,
+                 analyse_headers: bool,
                  port_mapping: Mapping):
         """Perform asynchronous TCP-connect scans on combinations of
         target IP addresses and/or domain names and port numbers.
@@ -35,6 +39,12 @@ class WebProbe(object):
             prefer_https (bool): Omit performing requests with the HTTP
                 URI scheme for those servers that also respond with
                 HTTPS.
+            fetch_headers (bool): Fetch headers for each URL returned
+                as valid by the probe.
+            analyse_headers (bool): Perform a header analysis by
+                fetching headers and writing a file displaying each
+                header sorted by frequency in ascending order. Useful
+                for finding unusual headers in request batches.
             port_mapping (Mapping): Allows ports other than 80 and 443
                 to be assigned to HTTP and HTTPS, respectively. Ex:
                 Dictionaries with the syntax {8080:'http'} or
@@ -45,16 +55,27 @@ class WebProbe(object):
         self.ports = ports
         self.timeout = timeout
         self.prefer_https = prefer_https
+        self.fetch_headers = fetch_headers
+        self.analyse_headers = analyse_headers
         self.port_mapping = port_mapping
         self.results = list()
+        self.headers = list()
         self.__loop = asyncio.get_event_loop()
         self.__observers = list()
 
-    def _set_scan_tasks(self) -> list[Coroutine]:
-        """Set up a scan coroutine for each combination of target
-        domain and port number."""
+    def _run_scan_tasks(self) -> list[Coroutine]:
+        """Set up and run a scan coroutine for each combination of
+        target domain and port number."""
         return [self._scan_target_port(target, port) for port in self.ports
                 for target in self.targets]
+
+    async def _run_fetch_headers(self) -> None:
+        """Set up and run a coroutine that fetches the response headers
+        for each URL returned from the probe as valid."""
+        async with aiohttp.ClientSession(trust_env=True) as session:
+            tasks = [asyncio.ensure_future(self._fetch_headers(session, url))
+                     for url in self.results]
+            self.headers = await asyncio.gather(*tasks)
 
     def register(self, observer) -> None:
         """Register a class that implements the interface of
@@ -76,6 +97,32 @@ class WebProbe(object):
             await asyncio.wait_for(asyncio.open_connection(
                 domain, port, loop=self.__loop), timeout=self.timeout)
             self.results.append(f"{self.port_mapping[port]}://{domain}")
+
+    @staticmethod
+    async def _fetch_headers(session, url: str) -> dict[str, dict]:
+        """
+        Fetch the headers from a specific URL.
+
+        Returns:
+            A dictionary with the format {URL: HEADERS} upon a
+                successful operation or {URL: ERRORS} otherwise.
+        """
+
+        try:
+            async with session.get(url) as response:
+                await response.text()
+                return {url: dict(response.headers)}
+        except aiohttp.ClientConnectorCertificateError as e:
+            return {url: {
+                "Error": f"{e.__class__.__name__}: An invalid TLS certificate "
+                         f"was returned by the host"}}
+
+    def _analyse_headers(self):
+        self.analysed_headers = defaultdict(list)
+        for result in self.headers:
+            (url, headers), = result.items()
+            for key, value in headers.items():
+                self.analysed_headers[key].extend([f"{url} > {key}: {value}"])
 
     def _get_port_from_proto(self, protocol: str) -> int:
         """Get a port number from a protocol name."""
@@ -103,10 +150,18 @@ class WebProbe(object):
             port.'''
             http_port: int = self._get_port_from_proto("http")
             self.ports.remove(http_port)
-            self.__loop.run_until_complete(asyncio.wait(self._set_scan_tasks()))
+            self.__loop.run_until_complete(asyncio.wait(self._run_scan_tasks()))
             [self.targets.remove(url.split("//")[1]) for url in self.results]
             self.ports = http_port,
-        self.__loop.run_until_complete(asyncio.wait(self._set_scan_tasks()))
+
+        self.__loop.run_until_complete(asyncio.wait(self._run_scan_tasks()))
+
+        if self.fetch_headers is True:
+            self.__loop.run_until_complete(self._run_fetch_headers())
+
+        if self.analyse_headers is True:
+            self._analyse_headers()
+
         self.__loop.run_until_complete(self._notify_all())
         return self.results
 
@@ -117,6 +172,8 @@ class WebProbeProxy(object):
                  ports: Union[int, str, Collection[int]] = None,
                  timeout: int = 5,
                  prefer_https: bool = False,
+                 fetch_headers: bool = False,
+                 analyse_headers: bool = False,
                  port_mapping: Union[str, Mapping] = None):
         """Proxy class for WebProbe.
 
@@ -141,11 +198,15 @@ class WebProbeProxy(object):
         self.ports = ports
         self.timeout = timeout
         self.prefer_https = prefer_https
+        self.analyse_headers = analyse_headers
+        self.fetch_headers = True if analyse_headers is True else fetch_headers
         self.webprobe = WebProbe(targets=self.targets,
                                  ports=self.ports,
                                  timeout=self.timeout,
                                  prefer_https=self.prefer_https,
-                                 port_mapping=self.port_mapping)
+                                 port_mapping=self.port_mapping,
+                                 fetch_headers=self.fetch_headers,
+                                 analyse_headers=self.analyse_headers)
 
     def __setattr__(self, key, value):
         with contextlib.suppress(AttributeError):
