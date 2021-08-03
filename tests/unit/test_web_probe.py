@@ -1,12 +1,14 @@
+import pathlib
 import pytest
 
-from webprobe import WebProbeProxy, ResultsToFile
+from webprobe import WebProbeProxy, ResultsToFile, HeaderAnalysisToFile, \
+    HeadersToFile
 
 
 @pytest.fixture
 def sample_domains():
-    return "/home/eonraider/Dropbox/offensive-python/tools/web-probe/tests/" \
-           "support_files/amass-uber.com.txt"
+    return pathlib.Path(__file__).parents[1].joinpath(
+        "support_files", "amass-uber.com.txt")
 
 
 @pytest.fixture
@@ -144,6 +146,48 @@ class TestWebProbeProxy:
         results = probe.execute()
         assert "http://127.0.0.1" in results
 
+    def test_probe_fetch_headers(self, sample_targets):
+        """
+        GIVEN an instance of WebProbeProxy
+        WHEN this instance is set to execute on a given iterable of
+            targets and their response headers must be fetched
+        THEN the results and response headers must be returned without
+            errors
+        """
+        probe = WebProbeProxy(targets=sample_targets, fetch_headers=True)
+        probe.execute()
+        assert len(probe.webprobe.headers) == len(probe.webprobe.results)
+
+    def test_probe_output_headers_to_file(self, sample_targets, tmp_path):
+        """
+        GIVEN a collection of results
+        WHEN these results are parsed by an instance of the
+            HeadersToFile class
+        THEN the results must be written to their respective files
+            without errors
+        """
+
+        probe = WebProbeProxy(targets=sample_targets, fetch_headers=True)
+        HeadersToFile(subject=probe, directory_path=tmp_path)
+
+        probe.execute()
+        for file in pathlib.Path(tmp_path).iterdir():
+            assert file.name.removesuffix(".head") in sample_targets
+
+    def test_probe_output_header_analysis(self, sample_targets, tmp_path):
+        """
+        GIVEN a collection of results
+        WHEN these results are parsed by an instance of the
+            HeaderAnalysisToFile class
+        THEN the results must be written to a file without errors
+        """
+
+        analysis_path = tmp_path.joinpath("sample_results.txt")
+        probe = WebProbeProxy(targets=sample_targets, analyse_headers=True)
+        HeaderAnalysisToFile(subject=probe, path=analysis_path)
+        probe.execute()
+        assert analysis_path.is_file()
+
     def test_probe_from_file(self, sample_domains):
         """
         GIVEN an instance of WebProbeProxy
@@ -156,15 +200,15 @@ class TestWebProbeProxy:
         for result in probe.execute():
             assert "uber.com" in result
 
-    def test_probe_output_to_file(self, sample_targets):
+    def test_probe_output_results_to_file(self, sample_targets, tmp_path):
         """
         GIVEN a collection of results
-        WHEN these results are parsed by the appropriate inheritor of
-            OutputMethod
+        WHEN these results are parsed by an instance of the
+            ResultsToFile class
         THEN the results must be written to a file without errors
         """
 
-        results_path = "/tmp/webprobe/sample_results.txt"
+        results_path = tmp_path.joinpath("sample_results.txt")
         probe = WebProbeProxy(targets=sample_targets)
         ResultsToFile(subject=probe, path=results_path)
 
@@ -172,4 +216,4 @@ class TestWebProbeProxy:
 
         with open(file=results_path, mode="r", encoding="utf_8") as file:
             file_results = [line.strip() for line in file]
-        assert probe.results == file_results
+        assert probe.webprobe.results == file_results
