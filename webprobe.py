@@ -222,12 +222,9 @@ class WebProbeProxy(object):
         return self.webprobe.register(observer=observer)
 
     @property
-    def results(self):
-        return self.webprobe.results
-
-    @property
     def port_mapping(self):
         """Gets port mapping.
+
         Sets a port mapping by parsing a string that maps port numbers
         to protocol names and transforms it into a dictionary.
         Ex: From '8080:http,9900:https' to {8080:'http',9900:'https'}
@@ -249,13 +246,17 @@ class WebProbeProxy(object):
 
     @property
     def targets(self):
+        """Gets targets.
+
+        Sets the targets by converting each acceptable type into a list
+        of strings appropriate for the instantiation of WebProbe."""
         return self._targets
 
     @targets.setter
     def targets(self, value: Union[str, Path, Collection[str]]):
         def __parse_file(filename: str) -> Iterator[str]:
             """Yield an iterator of strings extracted from the lines of
-            a text file"""
+            a text file."""
             try:
                 with open(file=filename, mode="r", encoding="utf_8") as file:
                     yield from (line.strip() for line in file)
@@ -277,6 +278,11 @@ class WebProbeProxy(object):
 
     @property
     def ports(self):
+        """Gets port numbers.
+
+        Sets the port numbers by converting each acceptable type into a
+        list of integers appropriate for the instantiation of
+        WebProbe."""
         return self._ports
 
     @ports.setter
