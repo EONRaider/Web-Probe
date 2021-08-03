@@ -248,12 +248,41 @@ class OutputMethod(abc.ABC):
 
 
 class ResultsToScreen(OutputMethod):
-    def __init__(self, subject):
+    def __init__(self, *,
+                 subject: Union[WebProbe, WebProbeProxy]):
         super().__init__(subject)
         self.scan = subject
 
-    async def update(self):
+    async def update(self) -> None:
         print(*(result for result in self.scan.webprobe.results), sep="\n")
+        await asyncio.sleep(0)
+
+
+class ResultsToFile(OutputMethod):
+    def __init__(self, *,
+                 subject: Union[WebProbe, WebProbeProxy],
+                 path: Union[str, Path]):
+        super().__init__(subject)
+        self.scan = subject
+        self.path = path
+
+    @property
+    def path(self):
+        return self._path
+
+    @path.setter
+    def path(self, value):
+        try:
+            self._path = Path(value)
+            self._path.parent.mkdir(parents=True, exist_ok=True)
+        except TypeError:
+            raise SystemExit(f"Invalid file name or type")
+        except PermissionError:
+            raise SystemExit(f"Permission denied when writing to file")
+
+    async def update(self) -> None:
+        with open(file=self.path, mode="w", encoding="utf_8") as file:
+            [file.write(f"{result}\n") for result in self.scan.webprobe.results]
         await asyncio.sleep(0)
 
 
@@ -301,6 +330,9 @@ if __name__ == "__main__":
                              "port bindings 80:HTTP and 443:HTTPS.")
     parser.add_argument("--silent", action="store_true",
                         help="Suppress displaying results to STDOUT.")
+    parser.add_argument("-o", "--output", type=str, default=None,
+                        metavar="PATH",
+                        help="Absolute path to a file to write results.")
 
     cli_args = parser.parse_args()
 
@@ -312,5 +344,7 @@ if __name__ == "__main__":
 
     if cli_args.silent is False:
         ResultsToScreen(subject=scanner)
+    if cli_args.output is not None:
+        ResultsToFile(subject=scanner, path=cli_args.output)
 
     scanner.execute()
