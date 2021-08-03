@@ -10,13 +10,26 @@ def sample_domains():
 
 
 @pytest.fixture
-def dummy_targets():
+def sample_targets():
     return ["invalid-domain.xyz", "google.com", "scanme.nmap.org",
             "hackthissite.org", "www.mibs-challenges.de", "demo.testfire.net"]
 
 
+@pytest.fixture
+def sample_results():
+    return ['http://google.com',
+            'https://google.com',
+            'https://www.mibs-challenges.de',
+            'http://scanme.nmap.org',
+            'http://www.mibs-challenges.de',
+            'https://demo.testfire.net',
+            'http://demo.testfire.net',
+            'http://hackthissite.org',
+            'https://hackthissite.org']
+
+
 class TestWebProbeProxy:
-    def test_probe_instantiates_correctly(self, dummy_targets):
+    def test_probe_instantiates_correctly(self, sample_targets):
         """
         GIVEN a set of target domains and ports
         WHEN this set is passed as arguments to the initializer of the
@@ -24,7 +37,7 @@ class TestWebProbeProxy:
         THEN an instance of WebProbeProxy must be created without errors
         """
 
-        probe = WebProbeProxy(targets=dummy_targets)
+        probe = WebProbeProxy(targets=sample_targets)
         assert isinstance(probe.targets, list)
         assert probe.ports == [80, 443]
         assert probe.timeout == 5
@@ -64,7 +77,7 @@ class TestWebProbeProxy:
         assert f"Permission denied when reading the file " \
                f"{no_read_file_path}" in e.value.args[0]
 
-    def test_probe_iterable_targets(self, dummy_targets):
+    def test_probe_iterable_targets(self, sample_targets, sample_results):
         """
         GIVEN an instance of WebProbeProxy
         WHEN this instance is set to execute on a given iterable of
@@ -72,33 +85,25 @@ class TestWebProbeProxy:
         THEN the results must be returned without errors
         """
 
-        probe = WebProbeProxy(targets=dummy_targets)
+        probe = WebProbeProxy(targets=sample_targets)
         for result in probe.execute():
-            assert result in ['http://google.com',
-                              'https://google.com',
-                              'https://www.mibs-challenges.de',
-                              'http://scanme.nmap.org',
-                              'http://www.mibs-challenges.de',
-                              'https://demo.testfire.net',
-                              'http://demo.testfire.net',
-                              'http://hackthissite.org',
-                              'https://hackthissite.org']
+            assert result in sample_results
 
-    def test_probe_integer_port(self, dummy_targets):
+    def test_probe_integer_port(self, sample_targets):
         """
         GIVEN an instance of WebProbeProxy
         WHEN this instance is set to execute on a specific port number
         THEN the results must be returned without errors
         """
 
-        probe = WebProbeProxy(targets=dummy_targets, ports=443)
+        probe = WebProbeProxy(targets=sample_targets, ports=443)
         for result in probe.execute():
             assert result in ['https://google.com',
                               'https://www.mibs-challenges.de',
                               'https://demo.testfire.net',
                               'https://hackthissite.org']
 
-    def test_probe_single_target(self, dummy_targets):
+    def test_probe_single_target(self, sample_targets):
         """
         GIVEN an instance of WebProbeProxy
         WHEN this instance is set to execute on a specific domain and
@@ -106,10 +111,10 @@ class TestWebProbeProxy:
         THEN the results must be returned without errors
         """
 
-        probe = WebProbeProxy(targets=dummy_targets[1], ports=443)
+        probe = WebProbeProxy(targets=sample_targets[1], ports=443)
         assert "https://google.com" in probe.execute()
 
-    def test_probe_prefer_https(self, dummy_targets):
+    def test_probe_prefer_https(self, sample_targets):
         """
         GIVEN an instance of WebProbeProxy
         WHEN this instance is set to execute on a given iterable of
@@ -117,7 +122,7 @@ class TestWebProbeProxy:
         THEN the results must be returned without errors
         """
 
-        probe = WebProbeProxy(targets=dummy_targets, prefer_https=True)
+        probe = WebProbeProxy(targets=sample_targets, prefer_https=True)
         for result in probe.execute():
             assert result in ['https://google.com',
                               'https://www.mibs-challenges.de',
@@ -125,6 +130,7 @@ class TestWebProbeProxy:
                               'https://demo.testfire.net',
                               'https://hackthissite.org']
 
+    # noinspection PyUnusedLocal
     @pytest.mark.skip()
     def test_probe_rebound_port(self, http_server):
         """
