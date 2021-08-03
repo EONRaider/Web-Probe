@@ -343,13 +343,82 @@ class ResultsToFile(OutputMethod):
             self._path = Path(value)
             self._path.parent.mkdir(parents=True, exist_ok=True)
         except TypeError:
-            raise SystemExit(f"Invalid file name or type")
+            raise SystemExit(f"Invalid file name or type: {self._path}")
         except PermissionError:
-            raise SystemExit(f"Permission denied when writing to file")
+            raise SystemExit(f"Permission denied when writing to file "
+                             f"{self._path}")
 
     async def update(self) -> None:
         with open(file=self.path, mode="w", encoding="utf_8") as file:
             [file.write(f"{result}\n") for result in self.scan.webprobe.results]
+        await asyncio.sleep(0)
+
+
+class HeadersToFile(OutputMethod):
+    def __init__(self, *,
+                 subject: Union[WebProbe, WebProbeProxy],
+                 directory_path: Union[str, Path]):
+        super().__init__(subject)
+        self.scan = subject
+        self.dir_path = directory_path
+
+    @property
+    def dir_path(self):
+        return self._dir_path
+
+    @dir_path.setter
+    def dir_path(self, value):
+        try:
+            self._dir_path = Path(value)
+            self._dir_path.mkdir(parents=True, exist_ok=True)
+        except TypeError:
+            raise SystemExit(f"Invalid name for directory: {self._dir_path}")
+        except PermissionError:
+            raise SystemExit(f"Permission denied when creating directory "
+                             f"{self._dir_path}")
+
+    async def update(self) -> None:
+        for result in self.scan.webprobe.headers:
+            (url, headers), = result.items()
+            domain: str = url.split("//")[1]
+            file_path: Path = self.dir_path.joinpath(f"{domain}.head")
+            with open(file=file_path, mode="a", encoding="utf_8") as file:
+                file.write(f"{url}\n")
+                for key, value in headers.items():
+                    file.write(f"\t{key}: {value}\n")
+                file.write("\n")
+        await asyncio.sleep(0)
+
+
+class HeaderAnalysisToFile(OutputMethod):
+    def __init__(self, *,
+                 subject: Union[WebProbe, WebProbeProxy],
+                 path: Union[str, Path]):
+        super().__init__(subject)
+        self.scan = subject
+        self.path = path
+
+    @property
+    def path(self):
+        return self._path
+
+    @path.setter
+    def path(self, value):
+        try:
+            self._path = Path(value)
+            self._path.parent.mkdir(parents=True, exist_ok=True)
+        except TypeError:
+            raise SystemExit(f"Invalid file name or type: {self._path}")
+        except PermissionError:
+            raise SystemExit(f"Permission denied when writing to file "
+                             f"{self._path}")
+
+    async def update(self) -> None:
+        with open(file=self.path, mode="w", encoding="utf_8") as file:
+            for key, value in self.scan.webprobe.analysed_headers:
+                file.write(f"[{key}]\n")
+                [file.write(f"\t{data}") for data in value]
+                file.write(f"\n")
         await asyncio.sleep(0)
 
 
@@ -399,19 +468,34 @@ if __name__ == "__main__":
                         help="Suppress displaying results to STDOUT.")
     parser.add_argument("-o", "--output", type=str, default=None,
                         metavar="PATH",
-                        help="Absolute path to a file to write results.")
+                        help="Absolute path to a file in which to write "
+                             "results of probing each web host.")
+    parser.add_argument("--headers", type=str, default=None, metavar="PATH",
+                        help="Absolute path to a directory in which to write "
+                             "files with the response headers for each probed "
+                             "URL.")
+    parser.add_argument("--header-analysis", type=str, default=None,
+                        metavar="PATH",
+                        help="Absolute path to a file in which to write all "
+                             "fetched headers in ascending order of frequency.")
 
     cli_args = parser.parse_args()
 
-    scanner = WebProbeProxy(targets=cli_args.targets,
-                            ports=cli_args.ports,
-                            timeout=cli_args.timeout,
-                            prefer_https=cli_args.prefer_https,
-                            port_mapping=cli_args.rebind)
+    probe = WebProbeProxy(targets=cli_args.targets,
+                          ports=cli_args.ports,
+                          timeout=cli_args.timeout,
+                          prefer_https=cli_args.prefer_https,
+                          port_mapping=cli_args.rebind,
+                          fetch_headers=bool(cli_args.headers),
+                          analyse_headers=bool(cli_args.header_analysis))
 
     if cli_args.silent is False:
-        ResultsToScreen(subject=scanner)
+        ResultsToScreen(subject=probe)
     if cli_args.output is not None:
-        ResultsToFile(subject=scanner, path=cli_args.output)
+        ResultsToFile(subject=probe, path=cli_args.output)
+    if cli_args.headers is not None:
+        HeadersToFile(subject=probe, directory_path=cli_args.headers)
+    if cli_args.header_analysis is not None:
+        HeaderAnalysisToFile(subject=probe, path=cli_args.header_analysis)
 
-    scanner.execute()
+    probe.execute()
