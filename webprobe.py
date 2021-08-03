@@ -161,6 +161,10 @@ class WebProbeProxy(object):
         return self.webprobe.register(observer=observer)
 
     @property
+    def results(self):
+        return self.webprobe.results
+
+    @property
     def port_mapping(self):
         """Gets port mapping.
         Sets a port mapping by parsing a string that maps port numbers
@@ -203,7 +207,7 @@ class WebProbeProxy(object):
                 self._targets = list(__parse_file(filename=value))
             else:
                 self._targets = [address.strip() for address in
-                                  value.split(",")]
+                                 value.split(",")]
         elif issubclass(value.__class__, Collection):
             self._targets = list(value)
         else:
