@@ -1,6 +1,6 @@
 import pytest
 
-from webprobe import WebProbeProxy
+from webprobe import WebProbeProxy, ResultsToFile
 
 
 @pytest.fixture
@@ -155,3 +155,21 @@ class TestWebProbeProxy:
         probe = WebProbeProxy(targets=sample_domains, prefer_https=True)
         for result in probe.execute():
             assert "uber.com" in result
+
+    def test_probe_output_to_file(self, sample_targets):
+        """
+        GIVEN a collection of results
+        WHEN these results are parsed by the appropriate inheritor of
+            OutputMethod
+        THEN the results must be written to a file without errors
+        """
+
+        results_path = "/tmp/webprobe/sample_results.txt"
+        probe = WebProbeProxy(targets=sample_targets)
+        ResultsToFile(subject=probe, path=results_path)
+
+        probe.execute()
+
+        with open(file=results_path, mode="r", encoding="utf_8") as file:
+            file_results = [line.strip() for line in file]
+        assert probe.results == file_results
