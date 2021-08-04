@@ -162,7 +162,8 @@ class WebProbe(object):
             [self.targets.remove(url.split("//")[1]) for url in self.results]
             self.ports = http_port,
 
-        self.__loop.run_until_complete(asyncio.wait(self._run_scan_tasks()))
+        if len(self.targets) > 0:
+            self.__loop.run_until_complete(asyncio.wait(self._run_scan_tasks()))
 
         if self.fetch_headers is True:
             self.__loop.run_until_complete(self._run_fetch_headers())
@@ -312,17 +313,22 @@ class WebProbeProxy(object):
 if __name__ == "__main__":
     import argparse
 
+    '''Unused import. Prevents raising a LookupError exception when 
+    running the Pyinstaller-generated executable on dist/webprobe'''
+    # noinspection PyUnresolvedReferences
+    import encodings.idna
+
     from src.output import ResultsToFile, ResultsToScreen, HeadersToFile, \
         HeaderAnalysisToFile
 
     usage = ("Usage examples:\n"
-             "1. python3 webprobe.py -t google.com\n"
-             "2. python3 webprobe.py "
+             "\t1. python3 webprobe.py -t google.com\n"
+             "\t2. python3 webprobe.py "
              "-t 45.33.32.156,demo.testfire.net,18.192.172.30 -p 443\n"
-             "3. python3 webprobe.py --prefer-https -t uber.com,paypal.com\n"
-             "4. python3 webprobe.py -t unusual-domain.xyz "
+             "\t3. python3 webprobe.py --prefer-https -t uber.com,paypal.com\n"
+             "\t4. python3 webprobe.py -t unusual-domain.xyz "
              "--rebind 1337:https\n"
-             "5. python3 webprobe.py -t /path/to/domains/file.txt")
+             "\t5. python3 webprobe.py -t /path/to/domains/file.txt\n")
 
     parser = argparse.ArgumentParser(
         description="WebProbe: Asynchronous TCP port scanner for live web "
@@ -344,7 +350,7 @@ if __name__ == "__main__":
     parser.add_argument("--timeout", type=int, default=5, metavar="TIME",
                         help="Time to wait for a response from a target before "
                              "closing a connection (defaults to 5 seconds).")
-    parser.add_argument("--prefer-https", type=bool, default=False,
+    parser.add_argument("--prefer-https", action="store_true",
                         help="Omit performing requests with the HTTP URI "
                              "scheme for those servers that also respond with "
                              "HTTPS (defaults to False).")
