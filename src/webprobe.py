@@ -140,8 +140,7 @@ class WebProbe(object):
 
     def execute(self) -> list[str]:
         """
-        Execute the asynchronous scan on each combination of target
-        domains and port numbers.
+        Execute asynchronous probing on each target socket.
 
         Returns:
             A list containing the URL of each live server that
@@ -246,12 +245,15 @@ class WebProbeProxy(object):
             self._port_mapping = value
         elif value is None:
             self._port_mapping = {80: "http", 443: "https"}
-        else:
+        elif isinstance(value, str):
             port_mapping = dict()
             for binding in value.split(","):
                 for port, protocol in binding.split(":"):
                     port_mapping[int(port)] = protocol.strip()
             self._port_mapping = port_mapping
+        else:
+            raise SystemExit(f"Invalid input type or syntax for port "
+                             f"mapping: {value}")
 
     @property
     def targets(self):
