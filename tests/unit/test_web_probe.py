@@ -132,7 +132,7 @@ class TestWebProbeProxy:
                               'https://demo.testfire.net',
                               'https://hackthissite.org']
 
-    # noinspection PyUnusedLocal
+    # noinspection PyUnusedLocal,PyTypeChecker
     @pytest.mark.skip()
     def test_probe_rebound_port(self, http_server):
         """
@@ -145,6 +145,13 @@ class TestWebProbeProxy:
         probe = WebProbeProxy(targets="127.0.0.1", port_mapping={8000: "http"})
         results = probe.execute()
         assert "http://127.0.0.1" in results
+
+        '''Creating an instance of WebProbeProxy with an invalid type or 
+        syntax for port mapping must raise an exception'''
+        with pytest.raises(SystemExit) as e:
+            probe = WebProbeProxy(targets="127.0.0.1", port_mapping=1337)
+        assert "Invalid input type or syntax for port mapping: 1337" in \
+               e.value.args[0]
 
     def test_probe_fetch_headers(self, sample_targets):
         """
