@@ -1,8 +1,8 @@
 import pathlib
 import pytest
 
-from webprobe import WebProbeProxy, ResultsToFile, HeaderAnalysisToFile, \
-    HeadersToFile
+from src.output import ResultsToFile, HeaderAnalysisToFile, HeadersToFile
+from src.webprobe import WebProbeProxy
 
 
 @pytest.fixture
