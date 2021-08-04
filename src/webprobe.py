@@ -60,6 +60,7 @@ class WebProbe(object):
         self.port_mapping = port_mapping
         self.results = list()
         self.headers = list()
+        self.analysed_headers = dict()
         self.__loop = asyncio.get_event_loop()
         self.__observers = list()
 
@@ -116,12 +117,20 @@ class WebProbe(object):
                 "Error": f"{e.__class__.__name__}: An invalid TLS certificate "
                          f"was returned by the host"}}
 
-    def _analyse_headers(self):
-        self.analysed_headers = defaultdict(list)
+    def _analyse_headers(self) -> None:
+        """Perform an analysis in which each header fetched by the
+        probe is sorted by frequency of appearance."""
+        headers_by_keys = defaultdict(list)
         for result in self.headers:
             (url, headers), = result.items()
             for key, value in headers.items():
-                self.analysed_headers[key].extend([f"{url} > {key}: {value}"])
+                headers_by_keys[key].extend([f"{url} > {key}: {value}"])
+        self.analysed_headers = {
+            key: headers_by_keys[key] for key in sorted(
+                headers_by_keys,
+                key=lambda k: len(headers_by_keys[k])
+            )
+        }
 
     def _get_port_from_proto(self, protocol: str) -> int:
         """Get a port number from a protocol name."""
@@ -373,10 +382,10 @@ if __name__ == "__main__":
     if cli_args.silent is False:
         ResultsToScreen(subject=probe)
     if cli_args.output is not None:
-        ResultsToFile(subject=probe, path=cli_args.output)
+        ResultsToFile(subject=probe, file_path=cli_args.output)
     if cli_args.headers is not None:
         HeadersToFile(subject=probe, directory_path=cli_args.headers)
     if cli_args.header_analysis is not None:
-        HeaderAnalysisToFile(subject=probe, path=cli_args.header_analysis)
+        HeaderAnalysisToFile(subject=probe, file_path=cli_args.header_analysis)
 
     probe.execute()
