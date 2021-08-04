@@ -184,7 +184,7 @@ class TestWebProbeProxy:
 
         analysis_path = tmp_path.joinpath("sample_results.txt")
         probe = WebProbeProxy(targets=sample_targets, analyse_headers=True)
-        HeaderAnalysisToFile(subject=probe, path=analysis_path)
+        HeaderAnalysisToFile(subject=probe, file_path=analysis_path)
         probe.execute()
         assert analysis_path.is_file()
 
@@ -210,7 +210,7 @@ class TestWebProbeProxy:
 
         results_path = tmp_path.joinpath("sample_results.txt")
         probe = WebProbeProxy(targets=sample_targets)
-        ResultsToFile(subject=probe, path=results_path)
+        ResultsToFile(subject=probe, file_path=results_path)
 
         probe.execute()
 
