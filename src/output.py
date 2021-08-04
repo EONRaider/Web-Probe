@@ -22,8 +22,9 @@ class OutputMethod(abc.ABC):
 
 
 class ResultsToScreen(OutputMethod):
-    def __init__(self, *,
-                 subject: Union[WebProbe, WebProbeProxy]):
+    """Print all results to STDOUT."""
+
+    def __init__(self, *, subject: Union[WebProbe, WebProbeProxy]):
         super().__init__(subject)
         self.scan = subject
 
@@ -33,12 +34,14 @@ class ResultsToScreen(OutputMethod):
 
 
 class ResultsToFile(OutputMethod):
+    """Write all results to a file."""
+
     def __init__(self, *,
                  subject: Union[WebProbe, WebProbeProxy],
-                 path: Union[str, Path]):
+                 file_path: Union[str, Path]):
         super().__init__(subject)
         self.scan = subject
-        self.path = path
+        self.path = file_path
 
     @property
     def path(self):
@@ -62,6 +65,9 @@ class ResultsToFile(OutputMethod):
 
 
 class HeadersToFile(OutputMethod):
+    """Write the headers returned by a request to each live web host to
+    a separate file named after the domain."""
+
     def __init__(self, *,
                  subject: Union[WebProbe, WebProbeProxy],
                  directory_path: Union[str, Path]):
@@ -98,12 +104,15 @@ class HeadersToFile(OutputMethod):
 
 
 class HeaderAnalysisToFile(OutputMethod):
+    """Write a file containing a frequency analysis for each header
+    fetched by the probe."""
+
     def __init__(self, *,
                  subject: Union[WebProbe, WebProbeProxy],
-                 path: Union[str, Path]):
+                 file_path: Union[str, Path]):
         super().__init__(subject)
         self.scan = subject
-        self.path = path
+        self.path = file_path
 
     @property
     def path(self):
@@ -122,8 +131,8 @@ class HeaderAnalysisToFile(OutputMethod):
 
     async def update(self) -> None:
         with open(file=self.path, mode="w", encoding="utf_8") as file:
-            for key, value in self.scan.webprobe.analysed_headers:
-                file.write(f"[{key}]\n")
-                [file.write(f"\t{data}") for data in value]
-                file.write(f"\n")
+            for key, value in self.scan.webprobe.analysed_headers.items():
+                file.write(f"[{key}]")
+                [file.write(f"\n\t{data}") for data in value]
+                file.write(f"\n\n")
         await asyncio.sleep(0)
