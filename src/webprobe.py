@@ -118,6 +118,17 @@ class WebProbe(object):
             return {url: {
                 "Error": f"{e.__class__.__name__}: An invalid TLS certificate "
                          f"was returned by the host"}}
+        except aiohttp.ClientConnectorError as e:
+            return {url: {
+                "Error": f"{e.__class__.__name__}: Failed to connect to host"}}
+        except aiohttp.ClientOSError as e:
+            return {url: {
+                "Error": f"{e.__class__.__name__}: TLSv1.3 certificate "
+                         f"required by the host"}}
+        except aiohttp.ClientResponseError as e:
+            return {url: {
+                "Error": f"{e.__class__.__name__}: A possibly malformed header "
+                         f"was received. Skipped."}}
 
     def _analyse_headers(self) -> None:
         """Perform an analysis in which each header fetched by the
@@ -126,7 +137,7 @@ class WebProbe(object):
         for result in self.headers:
             (url, headers), = result.items()
             for key, value in headers.items():
-                headers_by_keys[key].extend([f"{url} > {key}: {value}"])
+                headers_by_keys[key].extend([f"-> {url} > {key}: {value}"])
         self.analysed_headers = {
             key: headers_by_keys[key] for key in sorted(
                 headers_by_keys,
