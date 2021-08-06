@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Union
 
 from src.webprobe import WebProbe, WebProbeProxy
+from src.webprobe_exceptions import WebProbeInvalidPath, WebProbeAccessDenied
 
 
 class OutputMethod(abc.ABC):
@@ -53,10 +54,11 @@ class ResultsToFile(OutputMethod):
             self._path = Path(value)
             self._path.parent.mkdir(parents=True, exist_ok=True)
         except TypeError:
-            raise SystemExit(f"Invalid file name or type: {self._path}")
+            raise WebProbeInvalidPath(
+                f"Invalid file name or type: {self._path}")
         except PermissionError:
-            raise SystemExit(f"Permission denied when writing to file "
-                             f"{self._path}")
+            raise WebProbeAccessDenied(
+                f"Permission denied when writing to file {self._path}")
 
     async def update(self) -> None:
         with open(file=self.path, mode="w", encoding="utf_8") as file:
@@ -85,10 +87,11 @@ class HeadersToFile(OutputMethod):
             self._dir_path = Path(value)
             self._dir_path.mkdir(parents=True, exist_ok=True)
         except TypeError:
-            raise SystemExit(f"Invalid name for directory: {self._dir_path}")
+            raise WebProbeInvalidPath(
+                f"Invalid name for directory: {self._dir_path}")
         except PermissionError:
-            raise SystemExit(f"Permission denied when creating directory "
-                             f"{self._dir_path}")
+            raise WebProbeAccessDenied(
+                f"Permission denied when creating directory {self._dir_path}")
 
     async def update(self) -> None:
         for result in self.scan.webprobe.headers:
@@ -124,10 +127,11 @@ class HeaderAnalysisToFile(OutputMethod):
             self._path = Path(value)
             self._path.parent.mkdir(parents=True, exist_ok=True)
         except TypeError:
-            raise SystemExit(f"Invalid file name or type: {self._path}")
+            raise WebProbeInvalidPath(
+                f"Invalid file name or type: {self._path}")
         except PermissionError:
-            raise SystemExit(f"Permission denied when writing to file "
-                             f"{self._path}")
+            raise WebProbeAccessDenied(
+                f"Permission denied when writing to file {self._path}")
 
     async def update(self) -> None:
         with open(file=self.path, mode="w", encoding="utf_8") as file:
