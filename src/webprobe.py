@@ -11,7 +11,7 @@ from typing import Collection, Coroutine, Iterator, Mapping, Union
 
 import aiohttp
 
-from src.webprobe_exceptions import WebProbeInvalidInput, WebProbeAccessDenied
+from webprobe_exceptions import WebProbeInvalidInput, WebProbeAccessDenied
 
 
 class WebProbe(object):
@@ -324,7 +324,7 @@ if __name__ == "__main__":
     # noinspection PyUnresolvedReferences
     import encodings.idna
 
-    from src.output import ResultsToFile, ResultsToScreen, HeadersToFile, \
+    from output import ResultsToFile, ResultsToScreen, HeadersToFile, \
         HeaderAnalysisToFile
 
     usage = ("Usage examples:\n"
