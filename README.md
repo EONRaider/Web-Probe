@@ -2,8 +2,9 @@
 
 ![Python Version](https://img.shields.io/badge/python-3.7+-blue?style=for-the-badge&logo=python)
 ![OS](https://img.shields.io/badge/GNU%2FLinux-red?style=for-the-badge&logo=linux)
-![OS](https://img.shields.io/badge/OSX-gray?style=for-the-badge&logo=apple)
+![OS](https://img.shields.io/badge/mac%20OS-gray?style=for-the-badge&logo=apple)
 ![OS](https://img.shields.io/badge/Windows-blue?style=for-the-badge&logo=windows)
+
 [![CodeFactor Grade](https://img.shields.io/codefactor/grade/github/EONRaider/web-probe?style=for-the-badge)](https://www.codefactor.io/repository/github/EONRaider/web-probe)
 [![License](https://img.shields.io/github/license/EONRaider/Packet-Sniffer?style=for-the-badge)](https://github.com/EONRaider/Packet-Sniffer/blob/master/LICENSE)
 
@@ -18,37 +19,48 @@ addresses and/or domain names. It can probe an unlimited number of hosts
 simultaneously, **effectively scanning thousands of hosts within just a few
 seconds.**
 
-Furthermore, WebProbe fetches response headers from each target and parses
-them all, writing a file that displays a frequency analysis of headers. This
-is useful for finding *unusual headers* that may indicate the presence of a
-given system or vulnerability within a large set of targets.
+Furthermore, WebProbe optionally fetches response headers from each target
+and parses them all, writing a file that displays a frequency analysis for 
+those headers. This is useful for finding *unusual headers* that may 
+indicate the presence of a given system, infrastructure signature or 
+vulnerability within a large set of targets.
 
-This application can be run by any Python v3.7+ interpreter or as a 
-**stand-alone executable** on 64-bit GNU/Linux, Apple MacOS or Microsoft Windows.
+This application can be run by any Python v3.7+ interpreter, by a system 
+running **Docker** or, alternatively, as a **stand-alone executable** on 
+64-bit GNU/Linux, Apple macOS or Microsoft Windows. In fact, you don't 
+even need Python installed on your local environment to run WebProbe.
 
 ## Installation
 
-WebProbe can be run as a multi-platform executable thanks to 
+### From a standalone, multi-platform executable
+WebProbe can be run as a **multi-platform** executable thanks to 
 [PyInstaller](https://github.com/pyinstaller/pyinstaller).
 
-Simply download the `web_probe` file with from the `dist` directory 
-[at this location](https://github.com/EONRaider/Web-Probe/blob/master/dist/webprobe),
-grant it permissions to execute in the local context and run it as 
+Simply [click here](https://github.com/EONRaider/Web-Probe/raw/master/dist/webprobe)
+to download the `webprobe` file from the 
+[dist directory](https://github.com/EONRaider/Web-Probe/blob/master/dist/webprobe).
+Then just grant it permissions to execute in the local context and run it as 
 described in the following [Usage](#usage) section.
-```shell
-# In the directory where the webprobe executable is located
-user@host:~$ chmod 740 webprobe
-user@host:~$ webprobe --help
-```
 
-### Use it as a custom command
-On GNU/Linux or MacOS, either download the `webprobe` executable or create a symbolic
-link to it in a directory listed in the `$PATH` environment variable to 
-have `WebProbe` set up as a command in your system.
+- **Use it as a command**: On GNU/Linux or MacOS, either 
+download the `webprobe` executable or create a symbolic
+link to it in a convenient directory listed in the `$PATH` environment 
+variable to have `WebProbe` set up as a command in your local system. Take
+a look [here](https://stackoverflow.com/a/29235240) if you need help setting
+this up.
+
+### From Docker image
+Pull the image from DockerHub and check the help prompt with a single
+command:
+```
+user@host:~$ docker run -it eonraider/webprobe --help
+```
 
 ## Usage
 ```
-usage: webprobe [-h] -t ADDRESSES [-p PORTS] [--timeout TIME] [--prefer-https] [--rebind MAP] [--silent] [-o PATH] [--headers PATH] [--header-analysis PATH]
+usage: webprobe.py [-h] -t ADDRESSES [-p PORTS] [--timeout SECONDS]
+                   [--prefer-https] [--rebind MAP] [--silent] [-o FILE_PATH]
+                   [--headers DIR_PATH] [--header-analysis FILE_PATH]
 
 WebProbe: Asynchronous TCP port scanner for live web hosts
 
@@ -58,14 +70,14 @@ optional arguments:
                         An absolute path to a valid file with line-separated targets, a single target name or a comma-separated sequence of targets to probe, e.g., '45.33.32.156,65.61.137.117,testphp.vulnweb.com'
   -p PORTS, --ports PORTS
                         A comma-separated sequence of port numbers and/or port ranges to scan on each target specified, e.g., '20-25,53,80,443'.
-  --timeout TIME        Time to wait for a response from a target before closing a connection (defaults to 5 seconds).
+  --timeout SECONDS     Time to wait for a response from a target before closing a connection (defaults to 5 seconds).
   --prefer-https        Omit performing requests with the HTTP URI scheme for those servers that also respond with HTTPS (defaults to False).
   --rebind MAP          Allows ports other than 80 and 443 to be assigned to HTTP and HTTPS, respectively. Takes input with the syntax '8080:http' or '8080:http,9900:https'. Defaults to standard port bindings 80:HTTP and 443:HTTPS.
   --silent              Suppress displaying results to STDOUT.
-  -o PATH, --output PATH
+  -o FILE_PATH, --output FILE_PATH
                         Absolute path to a file in which to write results of probing each web host.
-  --headers PATH        Absolute path to a directory in which to write files with the response headers for each probed URL.
-  --header-analysis PATH
+  --headers DIR_PATH    Absolute path to a directory in which to write files with the response headers for each probed URL.
+  --header-analysis FILE_PATH
                         Absolute path to a file in which to write all fetched headers in ascending order of frequency.
 
 Usage examples:
@@ -74,39 +86,56 @@ Usage examples:
 	3. python3 webprobe.py --prefer-https -t uber.com,paypal.com
 	4. python3 webprobe.py -t unusual-domain.xyz --rebind 1337:https
 	5. python3 webprobe.py -t /path/to/domains/file.txt
-
 ```
+
+## Why analyse response headers?
+
+
 ## Usage Examples
 
-#### View the help prompt
-```shell
-user@host:~$ webprobe --help
-usage: webprobe [-h] -t ADDRESSES [-p PORTS] [--timeout TIME] [--prefer-https] [--rebind MAP] [--silent] [-o PATH] [--headers PATH] [--header-analysis PATH]
+<details>
+<summary>View the help prompt</summary>
 
+```
+user@host:~$ webprobe --help
+usage: webprobe.py [-h] -t ADDRESSES [-p PORTS] [--timeout SECONDS]
+                   [--prefer-https] [--rebind MAP] [--silent] [-o FILE_PATH]
+                   [--headers DIR_PATH] [--header-analysis FILE_PATH]
+                   
 WebProbe: Asynchronous TCP port scanner for live web hosts
 (...snip...)
 ```
+</details>
 
-#### Probe a single domain
-```shell
-user@host:~$ webprobe --target google.com
+<details>
+<summary>Probe a single domain</summary>
+
+```
+user@host:~$ webprobe --targets google.com
 https://google.com
 http://google.com
 ```
+</details>
 
-#### Probe multiple domains on a single port number
-```shell
+<details>
+<summary>Probe multiple domains on a single port number from the CLI</summary>
+
+```
 user@host:~$ webprobe -t facebook.com,scanme.nmap.org,instagram.com -p 443
 https://facebook.com
 https://instagram.com
 ```
+</details>
 
-#### Probe multiple domains from a text file
-```shell
+<details>
+<summary>Probe multiple domains from a text file</summary>
+
+```
 user@host:~$ cat domains.txt
 google.com
 uber.com
 paypal.com
+
 user@host:~$ webprobe -t domains.txt
 http://google.com
 https://google.com
@@ -115,6 +144,109 @@ https://uber.com
 https://paypal.com
 http://paypal.com
 ```
+</details>
+
+<details>
+<summary>Probe a domain and fetch the response headers</summary>
+
+```
+user@host:~$ webprobe --targets google.com --headers .
+http://google.com
+https://google.com
+
+user@host:~$ cat google.com.head
+http://google.com
+    Date: Wed, 04 Aug 2021 20:22:07 GMT
+    Expires: -1
+    Cache-Control: private, max-age=0
+    Content-Type: text/html; charset=ISO-8859-1
+    P3P: CP="This is not a P3P policy! See g.co/p3phelp for more info."
+    Content-Encoding: gzip
+    Server: gws
+    Content-Length: 6144
+    X-XSS-Protection: 0
+    X-Frame-Options: SAMEORIGIN
+    Set-Cookie: 1P_JAR=2021-08-04-20; expires=Fri, 03-Sep-2021 20:22:07 GMT; path=/; domain=.google.com; Secure
+
+https://google.com
+    Date: Wed, 04 Aug 2021 20:22:07 GMT
+    Expires: -1
+    Cache-Control: private, max-age=0
+    Content-Type: text/html; charset=ISO-8859-1
+    P3P: CP="This is not a P3P policy! See g.co/p3phelp for more info."
+    Content-Encoding: gzip
+    Server: gws
+    X-XSS-Protection: 0
+    X-Frame-Options: SAMEORIGIN
+    Set-Cookie: 1P_JAR=2021-08-04-20; expires=Fri, 03-Sep-2021 20:22:07 GMT; path=/; domain=.google.com; Secure
+    Alt-Svc: h3=":443"; ma=2592000,h3-29=":443"; ma=2592000,h3-T051=":443"; ma=2592000,h3-Q050=":443"; ma=2592000,h3-Q046=":443"; ma=2592000,h3-Q043=":443"; ma=2592000,quic=":443"; ma=2592000; v="46,43"
+    Transfer-Encoding: chunked
+```
+</details>
+
+
+<details>
+<summary>Probe 500+ domains from a text file and analyse their
+response headers in just 8.5 seconds</summary>
+
+```
+# Using the tests file from this repository
+user@host:~$ wc -l tests/support_files/amass-uber.com.txt
+557 tests/support_files/amass-uber.com.txt <-- Number of domains to probe 
+
+user@host:~$ time dist/webprobe --targets tests/support_files/amass-uber.com.txt \
+--header-analysis ~/Desktop/header-analysis.txt
+
+https://get.uber.com
+https://wallet.uber.com
+https://beta.uber.com
+(...snip...)
+https://safetycenter-staging.uber.com
+https://dba.usuppliers.uber.com
+http://sao2.uber.com
+
+real	0m8,558s <-- Total time elapsed
+user	0m2,809s
+sys	0m0,345s
+
+user@host:~$ cat ~/Desktop/header-analysis.txt
+[CF-Ray]
+	-> http://investor.uber.com > CF-Ray: 67aa80f63f6df758-GRU
+
+[CF-Cache-Status]
+	-> http://investor.uber.com > CF-Cache-Status: REVALIDATED
+
+[Expect-CT]
+	-> http://investor.uber.com > Expect-CT: max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+(...snip...)
+```
+</details>
+
+<details>
+<summary>Use WebProbe from Docker image</summary>
+
+Running a command for WebProbe using docker is as simple as using 
+`docker run -it eonraider/webprobe` followed by the standard arguments 
+described in the help prompt. The best way to extract output files 
+relies on creating a volume binding a local system directory to a 
+user-writable directory inside the container, such as `/tmp`.
+```
+# Simple probe from the CLI with results to STDOUT
+user@host:~$ docker run -it eonraider/webprobe --targets paypal.com
+http://paypal.com
+https://paypal.com
+
+# Using a volume to extract an output file from the Docker container
+user@host:~$ docker run -v ~/Desktop:/tmp -it eonraider/webprobe \
+--targets paypal.com -o /tmp/webprobe-paypal.com.txt
+http://paypal.com
+https://paypal.com
+
+user@host:~$ cat ~/Desktop/webprobe-paypal.com.txt
+http://paypal.com
+https://paypal.com
+```
+</details>
 
 ## Legal Disclaimer
 
