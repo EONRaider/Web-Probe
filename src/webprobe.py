@@ -11,6 +11,8 @@ from typing import Collection, Coroutine, Iterator, Mapping, Union
 
 import aiohttp
 
+from src.webprobe_exceptions import WebProbeInvalidInput, WebProbeAccessDenied
+
 
 class WebProbe(object):
     def __init__(self, *,
@@ -252,8 +254,8 @@ class WebProbeProxy(object):
                     port_mapping[int(port)] = protocol.strip()
             self._port_mapping = port_mapping
         else:
-            raise SystemExit(f"Invalid input type or syntax for port "
-                             f"mapping: {value}")
+            raise WebProbeInvalidInput(
+                f"Invalid input type or syntax for port mapping: {value}")
 
     @property
     def targets(self):
@@ -273,8 +275,8 @@ class WebProbeProxy(object):
                 with open(file=filename, mode="r", encoding="utf_8") as file:
                     yield from (line.strip() for line in file)
             except PermissionError:
-                raise SystemExit(f"Permission denied when reading the file "
-                                 f"{filename}")
+                raise WebProbeAccessDenied(
+                    f"Permission denied when reading the file {filename}")
 
         if isinstance(value, str) or issubclass(value.__class__, Path):
             if Path(value).is_file():
@@ -285,8 +287,9 @@ class WebProbeProxy(object):
         elif issubclass(value.__class__, Collection):
             self._targets = list(value)
         else:
-            raise SystemExit("Cannot proceed without specifying at least one "
-                             "target IP address or domain name")
+            raise WebProbeInvalidInput(
+                "Cannot proceed without specifying at least one target IP "
+                "address or domain name")
 
     @property
     def ports(self):
@@ -309,7 +312,8 @@ class WebProbeProxy(object):
         elif issubclass(value.__class__, Collection):
             self._ports = list(value)
         else:
-            raise SystemExit(f"Invalid input type for port numbers: {value}")
+            raise WebProbeInvalidInput(
+                f"Invalid input type for port numbers: {value}")
 
 
 if __name__ == "__main__":
@@ -349,7 +353,7 @@ if __name__ == "__main__":
                         help="A comma-separated sequence of port numbers "
                              "and/or port ranges to scan on each target "
                              "specified, e.g., '20-25,53,80,443'.")
-    parser.add_argument("--timeout", type=int, default=5, metavar="TIME",
+    parser.add_argument("--timeout", type=int, default=5, metavar="SECONDS",
                         help="Time to wait for a response from a target before "
                              "closing a connection (defaults to 5 seconds).")
     parser.add_argument("--prefer-https", action="store_true",
@@ -365,15 +369,15 @@ if __name__ == "__main__":
     parser.add_argument("--silent", action="store_true",
                         help="Suppress displaying results to STDOUT.")
     parser.add_argument("-o", "--output", type=str, default=None,
-                        metavar="PATH",
+                        metavar="FILE_PATH",
                         help="Absolute path to a file in which to write "
                              "results of probing each web host.")
-    parser.add_argument("--headers", type=str, default=None, metavar="PATH",
+    parser.add_argument("--headers", type=str, default=None, metavar="DIR_PATH",
                         help="Absolute path to a directory in which to write "
                              "files with the response headers for each probed "
                              "URL.")
     parser.add_argument("--header-analysis", type=str, default=None,
-                        metavar="PATH",
+                        metavar="FILE_PATH",
                         help="Absolute path to a file in which to write all "
                              "fetched headers in ascending order of frequency.")
 
