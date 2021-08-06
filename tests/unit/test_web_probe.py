@@ -3,6 +3,7 @@ import pytest
 
 from src.output import ResultsToFile, HeaderAnalysisToFile, HeadersToFile
 from src.webprobe import WebProbeProxy
+from src.webprobe_exceptions import WebProbeInvalidInput, WebProbeAccessDenied
 
 
 @pytest.fixture
@@ -65,7 +66,7 @@ class TestWebProbeProxy:
 
         '''Creating an instance of WebProbeProxy without specifying a 
         target address must raise an exception'''
-        with pytest.raises(SystemExit) as e:
+        with pytest.raises(WebProbeInvalidInput) as e:
             WebProbeProxy(targets=None)
         assert "Cannot proceed without specifying at least one target IP " \
                "address or domain name" in e.value.args[0]
@@ -74,7 +75,7 @@ class TestWebProbeProxy:
         to which the current user has no read access must raise an 
         exception'''
         no_read_file_path = "/etc/shadow"
-        with pytest.raises(SystemExit) as e:
+        with pytest.raises(WebProbeAccessDenied) as e:
             WebProbeProxy(targets=no_read_file_path)
         assert f"Permission denied when reading the file " \
                f"{no_read_file_path}" in e.value.args[0]
@@ -148,7 +149,7 @@ class TestWebProbeProxy:
 
         '''Creating an instance of WebProbeProxy with an invalid type or 
         syntax for port mapping must raise an exception'''
-        with pytest.raises(SystemExit) as e:
+        with pytest.raises(WebProbeInvalidInput) as e:
             probe = WebProbeProxy(targets="127.0.0.1", port_mapping=1337)
         assert "Invalid input type or syntax for port mapping: 1337" in \
                e.value.args[0]
