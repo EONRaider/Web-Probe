@@ -3,7 +3,7 @@ import pytest
 
 from src.output import ResultsToFile, HeaderAnalysisToFile, HeadersToFile
 from src.webprobe import WebProbeProxy
-from src.webprobe_exceptions import WebProbeInvalidInput, WebProbeAccessDenied
+from src.webprobe_exceptions import WebProbeInvalidInput
 
 
 @pytest.fixture
@@ -66,7 +66,7 @@ class TestWebProbeProxy:
 
         '''Creating an instance of WebProbeProxy without specifying a 
         target address must raise an exception'''
-        with pytest.raises(WebProbeInvalidInput) as e:
+        with pytest.raises(Exception) as e:
             WebProbeProxy(targets=None)
         assert "Cannot proceed without specifying at least one target IP " \
                "address or domain name" in e.value.args[0]
@@ -75,7 +75,7 @@ class TestWebProbeProxy:
         to which the current user has no read access must raise an 
         exception'''
         no_read_file_path = "/etc/shadow"
-        with pytest.raises(WebProbeAccessDenied) as e:
+        with pytest.raises(Exception) as e:
             WebProbeProxy(targets=no_read_file_path)
         assert f"Permission denied when reading the file " \
                f"{no_read_file_path}" in e.value.args[0]
