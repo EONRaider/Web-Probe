@@ -30,7 +30,7 @@ class ResultsToScreen(OutputMethod):
         self.scan = subject
 
     async def update(self) -> None:
-        print(*(result for result in self.scan.webprobe.results), sep="\n")
+        print(*self.scan.webprobe.results, sep="\n")
         await asyncio.sleep(0)
 
 

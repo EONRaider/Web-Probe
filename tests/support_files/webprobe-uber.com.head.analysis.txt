@@ -1,0 +1,49 @@
+[Content-Length]
+	-> http://google.com > Content-Length: 6145
+
+[Alt-Svc]
+	-> https://google.com > Alt-Svc: h3=":443"; ma=2592000,h3-29=":443"; ma=2592000,h3-T051=":443"; ma=2592000,h3-Q050=":443"; ma=2592000,h3-Q046=":443"; ma=2592000,h3-Q043=":443"; ma=2592000,quic=":443"; ma=2592000; v="46,43"
+
+[Transfer-Encoding]
+	-> https://google.com > Transfer-Encoding: chunked
+
+[Date]
+	-> http://google.com > Date: Fri, 06 Aug 2021 19:18:02 GMT
+	-> https://google.com > Date: Fri, 06 Aug 2021 19:18:02 GMT
+
+[Expires]
+	-> http://google.com > Expires: -1
+	-> https://google.com > Expires: -1
+
+[Cache-Control]
+	-> http://google.com > Cache-Control: private, max-age=0
+	-> https://google.com > Cache-Control: private, max-age=0
+
+[Content-Type]
+	-> http://google.com > Content-Type: text/html; charset=ISO-8859-1
+	-> https://google.com > Content-Type: text/html; charset=ISO-8859-1
+
+[P3P]
+	-> http://google.com > P3P: CP="This is not a P3P policy! See g.co/p3phelp for more info."
+	-> https://google.com > P3P: CP="This is not a P3P policy! See g.co/p3phelp for more info."
+
+[Content-Encoding]
+	-> http://google.com > Content-Encoding: gzip
+	-> https://google.com > Content-Encoding: gzip
+
+[Server]
+	-> http://google.com > Server: gws
+	-> https://google.com > Server: gws
+
+[X-XSS-Protection]
+	-> http://google.com > X-XSS-Protection: 0
+	-> https://google.com > X-XSS-Protection: 0
+
+[X-Frame-Options]
+	-> http://google.com > X-Frame-Options: SAMEORIGIN
+	-> https://google.com > X-Frame-Options: SAMEORIGIN
+
+[Set-Cookie]
+	-> http://google.com > Set-Cookie: 1P_JAR=2021-08-06-19; expires=Sun, 05-Sep-2021 19:18:02 GMT; path=/; domain=.google.com; Secure
+	-> https://google.com > Set-Cookie: 1P_JAR=2021-08-06-19; expires=Sun, 05-Sep-2021 19:18:02 GMT; path=/; domain=.google.com; Secure
+
