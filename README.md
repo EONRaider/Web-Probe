@@ -26,7 +26,7 @@ indicate the presence of a given system, infrastructure signature or
 vulnerability within a large set of targets.
 
 This application can be run by any Python v3.7+ interpreter, by a system 
-running **Docker** or, alternatively, as a **stand-alone executable** on 
+running **Docker** or, alternatively, as a **standalone executable** on 
 64-bit GNU/Linux, Apple macOS or Microsoft Windows. In fact, you don't 
 even need Python installed on your local environment to run WebProbe.
 
@@ -49,11 +49,21 @@ variable to have `WebProbe` set up as a command in your local system. Take
 a look [here](https://stackoverflow.com/a/29235240) if you need help setting
 this up.
 
-### From Docker image
+### From a Docker image
 Pull the image from DockerHub and check the help prompt with a single
 command:
 ```
 user@host:~$ docker run -it eonraider/webprobe --help
+```
+
+### From a Virtual Environment
+Better suited for development and eventual contributions to the project:
+```
+user@host:~$ git clone https://github.com/EONRaider/Web-Probe
+user@host:~$ cd Web-Probe
+user@host:~/Web-Probe$ python3 -m venv venv
+(venv) user@host:~/Web-Probe$ source venv/bin/activate
+(venv) user@host:~/Web-Probe$ pip install -r dev-requirements.txt
 ```
 
 ## Usage
@@ -89,6 +99,15 @@ Usage examples:
 ```
 
 ## Why analyse response headers?
+
+A good answer to this question can be found in
+[this livestream](https://youtu.be/SYExiynPEKM?t=940) from
+[Nahamsec](https://www.youtube.com/channel/UCCZDt7MuC3Hzs6IH4xODLBw)
+YouTube channel, but basically an analysis of response headers allows you
+to find unusual response patterns when performing recon on a target
+(especially in a bug bounty hunting environment). Take a look at the
+[sample header analysis](https://github.com/EONRaider/Web-Probe/blob/master/tests/support_files/webprobe-uber.com.head.analysis.txt)
+for the uber.com domain included in this project's support files.
 
 
 ## Usage Examples
