@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # https://github.com/EONRaider/Web-Probe
 
-__author__ = 'EONRaider @ keybase.io/eonraider'
+__author__ = "EONRaider @ keybase.io/eonraider"
+__version__ = "1.0.3"
 
 import asyncio
 import contextlib
@@ -353,13 +354,16 @@ if __name__ == "__main__":
         epilog=usage,
         formatter_class=argparse.RawTextHelpFormatter)
 
-    parser.add_argument("-t", "--targets", type=str, metavar="ADDRESSES",
-                        required=True,
-                        help="An absolute path to a valid file with "
-                             "line-separated targets, a single target name or "
-                             "a comma-separated sequence of targets to probe, "
-                             "e.g., '45.33.32.156,65.61.137.117,"
-                             "testphp.vulnweb.com'")
+    op_mode = parser.add_mutually_exclusive_group(required=True)
+
+    op_mode.add_argument("-t", "--targets", type=str, metavar="ADDRESSES",
+                         help="An absolute path to a valid file with "
+                              "line-separated targets, a single target name or "
+                              "a comma-separated sequence of targets to probe, "
+                              "e.g., '45.33.32.156,65.61.137.117,"
+                              "testphp.vulnweb.com'")
+    op_mode.add_argument("--version", action="store_true",
+                         help="Display the current version for WebProbe.")
     parser.add_argument("-p", "--ports", type=str, default=None,
                         help="A comma-separated sequence of port numbers "
                              "and/or port ranges to scan on each target "
@@ -393,6 +397,10 @@ if __name__ == "__main__":
                              "fetched headers in ascending order of frequency.")
 
     cli_args = parser.parse_args()
+
+    if cli_args.version is True:
+        print(__version__)
+        raise SystemExit()
 
     probe = WebProbeProxy(targets=cli_args.targets,
                           ports=cli_args.ports,
