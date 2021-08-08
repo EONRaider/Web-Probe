@@ -79,9 +79,10 @@ user@host:~/Web-Probe$ python3 -m venv venv
 
 ## Usage
 ```
-usage: webprobe.py [-h] -t ADDRESSES [-p PORTS] [--timeout SECONDS]
-                   [--prefer-https] [--rebind MAP] [--silent] [-o FILE_PATH]
-                   [--headers DIR_PATH] [--header-analysis FILE_PATH]
+usage: webprobe.py [-h] (-t ADDRESSES | --version) [-p PORTS]
+                   [--timeout SECONDS] [--prefer-https] [--rebind MAP]
+                   [--silent] [-o FILE_PATH] [--headers DIR_PATH]
+                   [--header-analysis FILE_PATH]
 
 WebProbe: Asynchronous TCP port scanner for live web hosts
 
@@ -89,6 +90,7 @@ optional arguments:
   -h, --help            show this help message and exit
   -t ADDRESSES, --targets ADDRESSES
                         An absolute path to a valid file with line-separated targets, a single target name or a comma-separated sequence of targets to probe, e.g., '45.33.32.156,65.61.137.117,testphp.vulnweb.com'
+  --version             Display the current version for WebProbe.
   -p PORTS, --ports PORTS
                         A comma-separated sequence of port numbers and/or port ranges to scan on each target specified, e.g., '20-25,53,80,443'.
   --timeout SECONDS     Time to wait for a response from a target before closing a connection (defaults to 5 seconds).
