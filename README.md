@@ -5,6 +5,7 @@
 ![OS](https://img.shields.io/badge/mac%20OS-gray?style=for-the-badge&logo=apple)
 ![OS](https://img.shields.io/badge/Windows-blue?style=for-the-badge&logo=windows)
 
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/eonraider/Web-Probe/ci-to-dockerhub?style=for-the-badge)
 [![CodeFactor Grade](https://img.shields.io/codefactor/grade/github/EONRaider/web-probe?style=for-the-badge)](https://www.codefactor.io/repository/github/EONRaider/web-probe)
 [![License](https://img.shields.io/github/license/EONRaider/Packet-Sniffer?style=for-the-badge)](https://github.com/EONRaider/Packet-Sniffer/blob/master/LICENSE)
 
@@ -42,7 +43,7 @@ to download the `webprobe` file from the
 Then just grant it permissions to execute in the local context and run it as 
 described in the following [Usage](#usage) section.
 
-- **Use it as a command**: On GNU/Linux or MacOS, either 
+- **Use it as a command**: On GNU/Linux or macOS, either 
 download the `webprobe` executable or create a symbolic
 link to it in a convenient directory listed in the `$PATH` environment 
 variable to have `WebProbe` set up as a command in your local system. Take
@@ -55,6 +56,15 @@ command:
 ```
 user@host:~$ docker run -it eonraider/webprobe --help
 ```
+
+- **Use it as a command**: There are several ways of doing this on GNU/Linux,
+but one of the quickest is to set up the `docker run` command as a shell alias:
+    ```
+    user@host:~$ echo "alias webprobe='docker run -it eonraider/webprobe'" >> /home/$USER/.bash_aliases
+    user@host:~$ source ~/.bashrc
+    user@host:~$ webprobe --help
+    (...will download and run the image from DockerHub...)
+    ```
 
 ### From a Virtual Environment
 Better suited for development and eventual contributions to the project:
