@@ -30,7 +30,8 @@ RUN adduser \
     webprobe
 
 COPY --from=build /tmp/venv .venv/
-COPY src ./
+COPY src src/
 
 USER webprobe
-ENTRYPOINT [".venv/bin/python3", "webprobe.py"]
+ENV PYTHONPATH=/home/webprobe
+ENTRYPOINT [".venv/bin/python3", "src/webprobe.py"]

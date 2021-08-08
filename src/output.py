@@ -3,8 +3,8 @@ import asyncio
 from pathlib import Path
 from typing import Union
 
-from webprobe import WebProbe, WebProbeProxy
-from webprobe_exceptions import WebProbeInvalidPath, WebProbeAccessDenied
+from src.webprobe import WebProbe, WebProbeProxy
+from src.webprobe_exceptions import WebProbeInvalidPath, WebProbeAccessDenied
 
 
 class OutputMethod(abc.ABC):
