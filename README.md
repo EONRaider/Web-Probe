@@ -5,8 +5,8 @@
 ![OS](https://img.shields.io/badge/mac%20OS-gray?style=for-the-badge&logo=apple)
 ![OS](https://img.shields.io/badge/Windows-blue?style=for-the-badge&logo=windows)
 
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/eonraider/web-probe/run-pytest?label=TESTS&style=for-the-badge)
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/eonraider/Web-Probe/ci-to-dockerhub?style=for-the-badge)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/eonraider/web-probe/run-pytest?label=TESTS&style=for-the-badge)](https://github.com/EONRaider/Web-Probe/tree/master/tests/unit)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/eonraider/Web-Probe/ci-to-dockerhub?style=for-the-badge)](https://hub.docker.com/r/eonraider/webprobe)
 [![CodeFactor Grade](https://img.shields.io/codefactor/grade/github/EONRaider/web-probe?style=for-the-badge)](https://www.codefactor.io/repository/github/EONRaider/web-probe)
 [![License](https://img.shields.io/github/license/EONRaider/Packet-Sniffer?style=for-the-badge)](https://github.com/EONRaider/Packet-Sniffer/blob/master/LICENSE)
 
