@@ -130,6 +130,10 @@ class WebProbe(object):
             return {url: {
                 "Error": f"{e.__class__.__name__}: A possibly malformed header "
                          f"was received. Skipped."}}
+        except aiohttp.ServerDisconnectedError as e:
+            return {url: {
+                "Error": f"{e.__class__.__name__}: The server refused the "
+                         f"connection."}}
 
     def _analyse_headers(self) -> None:
         """Perform an analysis in which each header fetched by the
